@@ -7,7 +7,6 @@
 #include "mqtt.h"
 
 void setup() {
-  Serial.begin(115200);
   setupLed();
   setupLighting();
   setupButton();
@@ -21,11 +20,7 @@ void loop() {
   loopOta();
   loopMqtt();
   loopLed();
-  // loopStrip();
+  loopLighting();
   loopButton();
-  if (need_to_change_state) {
-    lightingToggle();
-    need_to_change_state = false;
-  }
-  delay(5);
+  delay(1);
 }

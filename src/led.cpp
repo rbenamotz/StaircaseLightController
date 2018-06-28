@@ -3,12 +3,16 @@
 #include "led.h"
 #include "lighting.h"
 
-bool last_state = false;
+bool isLedOn = false;
+
 
 
 void apply() {
+  if (isLightsOn == isLedOn) {
+    return;
+  }
   digitalWrite(LED_PIN,!isLightsOn);
-  last_state = isLightsOn;
+  isLedOn = isLightsOn;
 }
 
 void setupLed() {
@@ -18,17 +22,15 @@ void setupLed() {
 
 
 void loopLed() {
-  if (isLightsOn != last_state) {
-    apply();
-  }
+  apply();
 }
 
 void blinkLed() {
-  for (int i=0; i<3; i++) {
+  for (int i=0; i<5; i++) {
     digitalWrite(LED_PIN,LOW);
-    delay(20);
+    delay(50);
     digitalWrite(LED_PIN,HIGH);
-    delay(20);
+    delay(50);
   }
   apply();
 }

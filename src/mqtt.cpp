@@ -8,7 +8,7 @@
 #define MAX_ATTEMPTS_FOR_EACH_RECONNECT 1
 #define DELAY_AFTER_FAILED_CONNECTION_MS 500
 
-unsigned long last_connection_attempt = 0;
+unsigned long lastConnectionAttempt = 0;
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -32,14 +32,14 @@ bool reconnect() {
   if (client.connected()) {
     return true;
   }
-  if (millis() - last_connection_attempt < DELAY_AFTER_FAILED_CONNECTION_MS) {
+  if (millis() - lastConnectionAttempt < DELAY_AFTER_FAILED_CONNECTION_MS) {
     return false;
   }
   bool output = client.connect(HOST_NAME,MQTT_USER,MQTT_PASS);
   if (output) {
     client.subscribe(MQTT_TOPIC_IN);
   }
-  last_connection_attempt = millis();
+  lastConnectionAttempt = millis();
   return output;
 
 }
@@ -49,7 +49,7 @@ void setupMqtt() {
   client.setCallback(callback);
 }
 
-void publishState() {
+void publishLightingState() {
   if (isLightsOn==lastPublishedState) {
     return;
   }
@@ -60,6 +60,7 @@ void publishState() {
   client.publish(MQTT_TOPIC_OUT , state.c_str());
   lastPublishedState = isLightsOn;
 }
+
 void publishSensorState() {
   if (long_click_sensor_state==lastPublishedSensorState) {
     return;
@@ -78,7 +79,7 @@ void loopMqtt() {
   if (!reconnect()) {
     return;
   }
-  publishState();
+  publishLightingState();
   publishSensorState();
   client.loop();
 }
