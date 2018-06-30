@@ -22,5 +22,5 @@ void loop() {
   loopLed();
   loopLighting();
   loopButton();
-  delay(1);
+  delay(5);
 }

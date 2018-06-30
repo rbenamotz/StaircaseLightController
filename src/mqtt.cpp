@@ -9,6 +9,8 @@
 #define DELAY_AFTER_FAILED_CONNECTION_MS 500
 
 unsigned long lastConnectionAttempt = 0;
+unsigned long lastTimeLightingStatePublished = 0;
+unsigned long lastMqttConectionCheck = 0;
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -50,9 +52,6 @@ void setupMqtt() {
 }
 
 void publishLightingState() {
-  if (isLightsOn==lastPublishedState) {
-    return;
-  }
   String state = "OFF";
   if (isLightsOn) {
     state = "ON";
@@ -62,9 +61,6 @@ void publishLightingState() {
 }
 
 void publishSensorState() {
-  if (long_click_sensor_state==lastPublishedSensorState) {
-    return;
-  }
   String state = "OFF";
   if (long_click_sensor_state) {
     state = "ON";
@@ -76,10 +72,18 @@ void publishSensorState() {
 
 
 void loopMqtt() {
+  unsigned long l = millis() - lastMqttConectionCheck;
   if (!reconnect()) {
     return;
   }
-  publishLightingState();
-  publishSensorState();
+  l = millis() - lastTimeLightingStatePublished;
+  if (isLightsOn!=lastPublishedState || l>5000) {
+    publishLightingState();
+    lastTimeLightingStatePublished = millis();
+  }
+  if (long_click_sensor_state!=lastPublishedSensorState) {
+    publishSensorState();
+  }
   client.loop();
+  lastMqttConectionCheck = millis();
 }

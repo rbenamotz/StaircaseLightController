@@ -6,6 +6,7 @@
 #define WIFI_CONNECTION_DELAY_MS 500
 unsigned long last_wifi_connection_attempt = 0;
 int failed_connections_counter = 0;
+unsigned long lastConectionCheck = 0;
 
 void reconnectToWifi() {
   if (WiFi.status() == WL_CONNECTED) {
@@ -28,7 +29,12 @@ void reconnectToWifi() {
 
 
 void loopWifi() {
+  unsigned long l = millis() - lastConectionCheck;
+  if (l<1000) {
+    return;
+  }
   reconnectToWifi();
+  lastConectionCheck = millis();
 }
 
 

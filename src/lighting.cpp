@@ -1,7 +1,7 @@
 #include "user_config.h"
 #include "lighting.h"
 #include <Arduino.h>
-#define LIGHT_ON_OFF_STEP 5
+#define LIGHT_ON_OFF_STEP 20
 
 bool isLightsOn = true;
 
@@ -33,10 +33,16 @@ void loopLighting() {
 
 
 void lightingOn() {
+  if (isLightsOn) {
+    return;
+  }
   isLightsOn = true;
   applyChanges();
 }
 void lightingOff() {
+  if (!isLightsOn) {
+    return;
+  }
   isLightsOn = false;
   applyChanges();
 }
