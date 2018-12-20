@@ -61,12 +61,15 @@ void publishLightingState() {
 }
 
 void publishSensorState() {
-  String state = "OFF";
-  if (long_click_sensor_state) {
-    state = "ON";
+  if (!long_click_sensor_state) {
+    return;
   }
-  client.publish(MQTT_LONG_CLICK_SENSOR , state.c_str());
-  lastPublishedSensorState = long_click_sensor_state;
+  String payload = "OFF";
+  if (isLightsOn) {
+    payload = "ON";
+  }
+  client.publish(MQTT_LONG_CLICK_SENSOR , payload.c_str());
+  long_click_sensor_state = false;
 }
 
 
@@ -81,9 +84,7 @@ void loopMqtt() {
     publishLightingState();
     lastTimeLightingStatePublished = millis();
   }
-  if (long_click_sensor_state!=lastPublishedSensorState) {
-    publishSensorState();
-  }
+  publishSensorState();
   client.loop();
   lastMqttConectionCheck = millis();
 }
