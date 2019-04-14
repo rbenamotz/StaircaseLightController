@@ -26,7 +26,7 @@ void loopLed() {
 }
 
 void blinkLed() {
-  for (int i=0; i<5; i++) {
+  for (int i=0; i<3; i++) {
     digitalWrite(LED_PIN,LOW);
     delay(50);
     digitalWrite(LED_PIN,HIGH);

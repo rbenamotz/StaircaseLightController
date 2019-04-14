@@ -4,87 +4,94 @@
 #include "lighting.h"
 #include "button.h"
 #include "user_config.h"
+#include "common.h"
 
 #define MAX_ATTEMPTS_FOR_EACH_RECONNECT 1
 #define DELAY_AFTER_FAILED_CONNECTION_MS 500
-
-unsigned long lastConnectionAttempt = 0;
-unsigned long lastTimeLightingStatePublished = 0;
-unsigned long lastMqttConectionCheck = 0;
 
 WiFiClient espClient;
 PubSubClient client(espClient);
 bool lastPublishedState = false;
 bool lastPublishedSensorState = false;
 
-void callback(char* topic, byte* payload, unsigned int length) {
-  if (length<=0) {
+void callback(char *topic, byte *payload, unsigned int length)
+{
+  if (length <= 0)
+  {
+    writeToLog("Toggling lights due to MQTT command");
     lightingToggle();
     return;
   }
-  if (((char*) payload)[1]=='N') {
+  if (((char *)payload)[1] == 'N')
+  {
+    writeToLog("Turning lights ON due to MQTT command");
     lightingOn();
-  } else {
+  }
+  else
+  {
+    writeToLog("Turning lights OFF due to MQTT command");
     lightingOff();
   }
 }
 
-
-bool reconnect() {
-  if (client.connected()) {
-    return true;
-  }
-  if (millis() - lastConnectionAttempt < DELAY_AFTER_FAILED_CONNECTION_MS) {
-    return false;
-  }
-  bool output = client.connect(HOST_NAME,MQTT_USER,MQTT_PASS);
-  if (output) {
+bool reconnectToMqtt()
+{
+  bool output = client.connect(HOST_NAME, MQTT_USER, MQTT_PASS);
+  if (output)
+  {
     client.subscribe(MQTT_TOPIC_IN);
   }
-  lastConnectionAttempt = millis();
   return output;
-
 }
 
-void setupMqtt() {
+void setupMqtt()
+{
   client.setServer(MQTT_HOST_NAME, MQTT_PORT);
   client.setCallback(callback);
 }
 
-void publishLightingState() {
+void publishLightingState()
+{
   String state = "OFF";
-  if (isLightsOn) {
+  if (isLightsOn)
+  {
     state = "ON";
   }
-  client.publish(MQTT_TOPIC_OUT , state.c_str());
+  client.publish(MQTT_TOPIC_OUT, state.c_str());
   lastPublishedState = isLightsOn;
 }
 
-void publishSensorState() {
-  if (!long_click_sensor_state) {
+void publishSensorState()
+{
+  if (!long_click_sensor_state)
+  {
     return;
   }
   String payload = "OFF";
-  if (isLightsOn) {
+  if (isLightsOn)
+  {
     payload = "ON";
   }
-  client.publish(MQTT_LONG_CLICK_SENSOR , payload.c_str());
+  client.publish(MQTT_LONG_CLICK_SENSOR, payload.c_str());
   long_click_sensor_state = false;
 }
 
-
-
-void loopMqtt() {
-  unsigned long l = millis() - lastMqttConectionCheck;
-  if (!reconnect()) {
-    return;
+void loopMqtt()
+{
+  static unsigned long lastTimeLightingStatePublished = 0;
+  if (!client.loop())
+  {
+    bool b = reconnectToMqtt();
+    if (!b)
+    {
+      return;
+    }
   }
-  l = millis() - lastTimeLightingStatePublished;
-  if (isLightsOn!=lastPublishedState || l>5000) {
+  unsigned long l = millis() - lastTimeLightingStatePublished;
+  if (l > 5000)
+  {
     publishLightingState();
     lastTimeLightingStatePublished = millis();
   }
   publishSensorState();
-  client.loop();
-  lastMqttConectionCheck = millis();
 }

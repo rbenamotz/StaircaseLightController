@@ -1,46 +1,43 @@
+#include <Arduino.h>
 #include <ESP8266WiFi.h>
-#include "wifi.h"
-#include "user_config.h"
 #include <ESP8266mDNS.h>
+#include "user_config.h"
+#include "common.h"
 
-#define WIFI_CONNECTION_DELAY_MS 500
-unsigned long last_wifi_connection_attempt = 0;
-int failed_connections_counter = 0;
-unsigned long lastConectionCheck = 0;
-
-void reconnectToWifi() {
-  if (WiFi.status() == WL_CONNECTED) {
-    return;
-  }
-  if (millis() - last_wifi_connection_attempt < WIFI_CONNECTION_DELAY_MS) {
-    return;
-  }
-  failed_connections_counter++;
-  if (failed_connections_counter > 10) {
-    ESP.restart();
-  }
-  if  (WiFi.waitForConnectResult() == WL_CONNECTED) {
-    MDNS.begin(HOST_NAME);
-    failed_connections_counter = 0;
-  }
-  last_wifi_connection_attempt = millis();
-  return;
+static void onStationModeConnected(const WiFiEventStationModeConnected &event)
+{
+  writeToLog("WiFi Connected. SSID=%s", event.ssid.c_str());
 }
 
-
-void loopWifi() {
-  unsigned long l = millis() - lastConectionCheck;
-  if (l<1000) {
-    return;
-  }
-  reconnectToWifi();
-  lastConectionCheck = millis();
+static void onStationModeDisconnected(const WiFiEventStationModeDisconnected &event)
+{
+  writeToLog("WiFi Disconnected. Reason code=%d", event.reason);
+  globalIsWifiConnected = false;
 }
 
+static void onStationModeGotIP(const WiFiEventStationModeGotIP &event)
+{
+  writeToLog("WiFi Got IP. localIP=%s, hostname=%s", event.ip.toString().c_str(), WiFi.hostname().c_str());
+  globalIsWifiConnected = true;
+  MDNS.begin(HOST_NAME);
+}
 
-void setupWifi() {
+static void onStationModeDHCPTimeout()
+{
+  writeToLog("WiFi DHCP timed out.");
+  globalIsWifiConnected = false;
+}
+
+void setupWifi()
+{
+  static WiFiEventHandler e1 = WiFi.onStationModeConnected(onStationModeConnected);
+  static WiFiEventHandler e2 = WiFi.onStationModeDisconnected(onStationModeDisconnected);
+  static WiFiEventHandler e3 = WiFi.onStationModeGotIP(onStationModeGotIP);
+  static WiFiEventHandler e4 = WiFi.onStationModeDHCPTimeout(onStationModeDHCPTimeout);
   WiFi.hostname(HOST_NAME);
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PSWD);
-  reconnectToWifi();
+}
+void loopWifi()
+{
 }
