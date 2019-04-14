@@ -57,7 +57,12 @@ void publishLightingState()
   {
     state = "ON";
   }
-  client.publish(MQTT_TOPIC_OUT, state.c_str());
+#ifdef ENV_DEV
+  writeToLog("Fake publiushing %s to %s", state.c_str(), MQTT_TOPIC_OUT);
+#else
+   client.publish(MQTT_TOPIC_OUT, state.c_str());
+#endif
+ 
   lastPublishedState = isLightsOn;
 }
 
@@ -72,7 +77,11 @@ void publishSensorState()
   {
     payload = "ON";
   }
+#ifdef ENV_DEV
+  writeToLog("Fake publiushing %s to %s", payload.c_str(), MQTT_LONG_CLICK_SENSOR);
+#else
   client.publish(MQTT_LONG_CLICK_SENSOR, payload.c_str());
+#endif
   long_click_sensor_state = false;
 }
 

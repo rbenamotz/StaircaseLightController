@@ -5,10 +5,12 @@
 #include "wifi.h"
 #include "ota.h"
 #include "mqtt.h"
+#include "common.h"
 #include "webserver.h"
 
 void setup()
 {
+  setupCommon();
   setupLed();
   setupLighting();
   setupButton();

@@ -18,6 +18,7 @@ void loopButton()
 {
   static unsigned long last_button_status_check = 0;
   unsigned long l = millis() - last_button_status_check;
+  static bool longClickInitated = false;
   if (l < 10)
   {
     return;
@@ -36,12 +37,13 @@ void loopButton()
 
   //long click?
   l = millis() - buttonDownSince;
-  if (state && buttonDown && !long_click_sensor_state && l >= 1000)
+  if (state && buttonDown && !long_click_sensor_state && l >= 600 && !longClickInitated)
   {
     writeToLog("Button long click");
 
     blinkLed();
     long_click_sensor_state = true;
+    longClickInitated = true;
     return;
   }
 
@@ -51,5 +53,6 @@ void loopButton()
     writeToLog("Button up");
     buttonDown = false;
     long_click_sensor_state = false;
+    longClickInitated = false;
   }
 }
