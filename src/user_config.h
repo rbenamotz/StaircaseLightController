@@ -2,6 +2,8 @@
 #define _USER_CONFIG_H_
 
 
+#define LOG_TO_SERIAL false
+#define LOG_SIZE 50
 
 //Hardware
 #define LED_PIN 5
