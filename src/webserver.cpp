@@ -11,6 +11,7 @@ ESP8266WebServer server(80);
 ESP8266HTTPUpdateServer httpUpdater;
 WebSocketsServer webSockets = WebSocketsServer(81);
 StaticJsonDocument<500> doc;
+volatile bool isLogDirty = false;
 
 const char rootPage[] PROGMEM = {ROOT_PAGE};
 
@@ -45,9 +46,10 @@ void handleRestart()
 
 void writeLogToSockets(String logLine)
 {
+  isLogDirty = true;
   // webSockets.broadcastTXT(logLine + "\n");
-  String s = readLogBuffer();
-  webSockets.broadcastTXT(s);
+  // String s = readLogBuffer();
+  // webSockets.broadcastTXT(s);
 }
 
 void setupWebServer()
@@ -72,12 +74,22 @@ void loopWebServer()
 
   static int totalWSConnectedClinets = 0;
   webSockets.loop();
+  unsigned long start = millis();
   server.handleClient();
-  int p = webSockets.connectedClients();
-  if (p == totalWSConnectedClinets)
-  {
-    return;
+  unsigned long l = millis() - start;
+  if (l>5) {
+    writeToLog("handleClient took %lums",l);
   }
-  writeLogToSockets("");
-  totalWSConnectedClinets = p;
+  int p = webSockets.connectedClients();
+  if (p != totalWSConnectedClinets)
+  {
+    isLogDirty = true;
+    totalWSConnectedClinets = p;
+  }
+  if (isLogDirty)
+  {
+    String s = readLogBuffer();
+    webSockets.broadcastTXT(s);
+    isLogDirty = false;
+  }
 }

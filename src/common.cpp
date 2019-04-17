@@ -3,18 +3,18 @@
 #include <stdio.h>
 #include "user_config.h"
 
-
 //Globals
-bool globalIsWifiConnected  = false;
-bool globalIsLightsOn = false;
-bool globalShouldPublishLongClick = false;
+volatile bool globalIsWifiConnected = false;
+volatile bool globalIsLightsOn = false;
+volatile bool globalShouldPublishLongClick = false;
 
 String log_buffer[LOG_SIZE];
 unsigned long log_buffer_ms[LOG_SIZE];
 int log_buffer_index = -1;
 LogLineHandlerFunction logHandler = NULL;
 
-void onLogLine(LogLineHandlerFunction f) {
+void onLogLine(LogLineHandlerFunction f)
+{
   logHandler = f;
 }
 
@@ -50,7 +50,8 @@ void writeToLog(String line, ...)
   {
     Serial.println(temp);
   }
-  if (logHandler != NULL) {
+  if (logHandler != NULL)
+  {
     logHandler(temp);
   }
 }

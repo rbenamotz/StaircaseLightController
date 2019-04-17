@@ -40,5 +40,6 @@ void loop()
   executeLoopWork("Led",loopLed);
   executeLoopWork("Lighting",loopLighting);
   executeLoopWork("MQTT",loopMqtt);
-  executeLoopWork("WebServer",loopWebServer);
+  // executeLoopWork("WebServer",loopWebServer);
+  loopWebServer();
 }

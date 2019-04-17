@@ -4,9 +4,9 @@
 
 
 //Globals
-extern bool globalIsWifiConnected;
-extern bool globalIsLightsOn;
-extern bool globalShouldPublishLongClick;
+volatile extern bool globalIsWifiConnected;
+volatile extern bool globalIsLightsOn;
+volatile extern bool globalShouldPublishLongClick;
 
 
 //OTA
