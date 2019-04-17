@@ -8,6 +8,18 @@
 #include "common.h"
 #include "webserver.h"
 
+void (*loopWorkItem)();
+
+void executeLoopWork(const char* operation, void (*loopWorkItem)())
+{
+  unsigned long l = millis();
+  loopWorkItem();
+  l = millis() - l;
+  if (l>2) {
+    writeToLog("Looping %s took %lu ms to complete",operation,l);
+  }
+}
+
 void setup()
 {
   setupCommon();
@@ -22,11 +34,11 @@ void setup()
 
 void loop()
 {
-  loopWifi();
-  loopOta();
-  loopButton();
-  loopLed();
-  loopLighting();
-  loopMqtt();
-  loopWebServer();
+  executeLoopWork("WiFi",loopWifi);
+  executeLoopWork("OTA",loopOta);
+  executeLoopWork("Button", loopButton);
+  executeLoopWork("Led",loopLed);
+  executeLoopWork("Lighting",loopLighting);
+  executeLoopWork("MQTT",loopMqtt);
+  executeLoopWork("WebServer",loopWebServer);
 }
