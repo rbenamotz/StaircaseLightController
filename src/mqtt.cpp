@@ -1,7 +1,6 @@
 #include "mqtt.h"
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
-#include "lighting.h"
 #include "button.h"
 #include "user_config.h"
 #include "common.h"
@@ -11,23 +10,28 @@
 
 WiFiClient espClient;
 PubSubClient client(espClient);
-bool lastPublishedState = false;
 bool lastPublishedSensorState = false;
 
-void publishLightingState()
+void publishLightingState(bool force = false)
 {
+  static bool lastPublishedState = false;
+  if (!force && lastPublishedState == globalIsLightsOn)
+  {
+    return;
+  }
+
   String state = "OFF";
-  if (isLightsOn)
+  if (globalIsLightsOn)
   {
     state = "ON";
   }
 #ifdef ENV_DEV
-  writeToLog("Fake publiushing %s to %s", state.c_str(), MQTT_TOPIC_OUT);
+  writeToLog("Fake publishing light state (%s to %s)", state.c_str(), MQTT_TOPIC_OUT);
 #else
   client.publish(MQTT_TOPIC_OUT, state.c_str());
 #endif
 
-  lastPublishedState = isLightsOn;
+  lastPublishedState = globalIsLightsOn;
 }
 
 void callback(char *topic, byte *payload, unsigned int length)
@@ -35,27 +39,26 @@ void callback(char *topic, byte *payload, unsigned int length)
   if (length <= 0)
   {
     writeToLog("Toggling lights due to MQTT command");
-    lightingToggle();
-    publishLightingState();
+    globalIsLightsOn = !globalIsLightsOn;
     return;
   }
   if (((char *)payload)[1] == 'N')
   {
     writeToLog("Turning lights ON due to MQTT command");
-    lightingOn();
-    publishLightingState();
+    globalIsLightsOn = true;
   }
   else
   {
     writeToLog("Turning lights OFF due to MQTT command");
-    lightingOff();
-    publishLightingState();
+    globalIsLightsOn = false;
   }
 }
 
 void reconnectToMqtt()
 {
-  if (client.state() == MQTT_CONNECTED)
+  static unsigned long lastConectionAttempt = 0lu;
+  unsigned long l = millis() - lastConectionAttempt;
+  if (client.state() == MQTT_CONNECTED || l < 500 || !globalIsWifiConnected)
   {
     return;
   }
@@ -69,6 +72,7 @@ void reconnectToMqtt()
   {
     writeToLog("Failed to connected to MQTT %s as %s", HOST_NAME, MQTT_USER);
   }
+  lastConectionAttempt = millis();
 }
 
 void setupMqtt()
@@ -79,44 +83,34 @@ void setupMqtt()
 
 void publishSensorState()
 {
-  if (!long_click_sensor_state)
+  if (!globalShouldPublishLongClick)
   {
     return;
   }
   String payload = "OFF";
-  if (isLightsOn)
+  if (globalIsLightsOn)
   {
     payload = "ON";
   }
 #ifdef ENV_DEV
-  writeToLog("Fake publiushing %s to %s", payload.c_str(), MQTT_LONG_CLICK_SENSOR);
+  writeToLog("Fake publishing sensor state (%s to %s)", payload.c_str(), MQTT_LONG_CLICK_SENSOR);
 #else
   client.publish(MQTT_LONG_CLICK_SENSOR, payload.c_str());
 #endif
-  long_click_sensor_state = false;
+  globalShouldPublishLongClick = false;
 }
 
 void loopMqtt()
 {
-  static unsigned long lastLoop = 0;
-  static unsigned long lastTimeLightingStatePublished = 0;
-  if (!globalIsWifiConnected)
-  {
-    return;
-  }
-  unsigned long l = millis() - lastLoop;
-  if (l < 10)
-  {
-    return;
-  }
   reconnectToMqtt();
-  client.loop();
-  lastLoop = millis();
-  l = millis() - lastTimeLightingStatePublished;
-  if (l > 5000)
-  {
-    publishLightingState();
-    lastTimeLightingStatePublished = millis();
-  }
+  // lastLoop = millis();
+  // l = millis() - lastTimeLightingStatePublished;
+  // if (l > 5000)
+  // {
+  //   publishLightingState();
+  //   lastTimeLightingStatePublished = millis();
+  // }
+  publishLightingState();
   publishSensorState();
+  client.loop();
 }

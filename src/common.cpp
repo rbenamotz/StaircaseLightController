@@ -6,10 +6,17 @@
 
 //Globals
 bool globalIsWifiConnected  = false;
+bool globalIsLightsOn = false;
+bool globalShouldPublishLongClick = false;
 
 String log_buffer[LOG_SIZE];
 unsigned long log_buffer_ms[LOG_SIZE];
 int log_buffer_index = -1;
+LogLineHandlerFunction logHandler = NULL;
+
+void onLogLine(LogLineHandlerFunction f) {
+  logHandler = f;
+}
 
 void setupCommon()
 {
@@ -43,6 +50,9 @@ void writeToLog(String line, ...)
   {
     Serial.println(temp);
   }
+  if (logHandler != NULL) {
+    logHandler(temp);
+  }
 }
 
 String readLogBuffer()
@@ -53,13 +63,9 @@ String readLogBuffer()
   {
     int p = i + log_buffer_index;
     int l = p % LOG_SIZE;
-    unsigned long temp = (now - log_buffer_ms[l]) / 1000;
-    if (temp < 10)
-    {
-      output += "0";
-    }
+    unsigned long temp = (now - log_buffer_ms[l]);
     output += temp;
-    output += " - ";
+    output += ",";
     output += log_buffer[l];
     output += "\n";
   }

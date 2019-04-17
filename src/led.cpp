@@ -1,36 +1,38 @@
 #include "user_config.h"
 #include <Arduino.h>
 #include "led.h"
-#include "lighting.h"
+#include "common.h"
 
-bool isLedOn = false;
-
-
-
-void apply() {
-  if (isLightsOn == isLedOn) {
+void apply(bool force = false)
+{
+  static bool ledState = !globalIsLightsOn;
+  if (!force && ledState != globalIsLightsOn)
+  {
     return;
   }
-  digitalWrite(LED_PIN,!isLightsOn);
-  isLedOn = isLightsOn;
+  ledState = !globalIsLightsOn;
+  digitalWrite(LED_PIN, ledState);
 }
 
-void setupLed() {
+void setupLed()
+{
   pinMode(LED_PIN, OUTPUT);
+  apply(true);
 }
 
-
-
-void loopLed() {
+void loopLed()
+{
   apply();
 }
 
-void blinkLed() {
-  for (int i=0; i<3; i++) {
-    digitalWrite(LED_PIN,LOW);
+void blinkLed()
+{
+  for (int i = 0; i < 3; i++)
+  {
+    digitalWrite(LED_PIN, LOW);
     delay(50);
-    digitalWrite(LED_PIN,HIGH);
+    digitalWrite(LED_PIN, HIGH);
     delay(50);
   }
-  apply();
+  apply(true);
 }

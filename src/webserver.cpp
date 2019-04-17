@@ -1,15 +1,20 @@
 #include "webserver.h"
 #include <ESP8266WebServer.h>
+#include <WebSocketsServer.h>
 #include "common.h"
 #include "user_config.h"
 #include <ArduinoJson.h>
+#include <Hash.h>
 
 ESP8266WebServer server(80);
+WebSocketsServer webSockets = WebSocketsServer(81);
 StaticJsonDocument<500> doc;
+
+const char rootPage[] PROGMEM = {ROOT_PAGE};
 
 void handleRoot()
 {
-  server.send(200, "text/html", ROOT_PAGE);
+  server.send_P(200, "text/html", rootPage);
 }
 
 void buildJsonInt(char *output, String name, int value)
@@ -35,16 +40,40 @@ void handleRestart()
   ESP.restart();
 }
 
+void writeLogToSockets(String logLine)
+{
+  // webSockets.broadcastTXT(logLine + "\n");
+  String s = readLogBuffer();
+  webSockets.broadcastTXT(s);
+}
+
 void setupWebServer()
 {
   server.on("/", handleRoot);
   server.on("/log", handleLog);
   server.on("/rst", handleRestart);
-  server.begin();
-  writeToLog("Web server listening");
 }
 
 void loopWebServer()
 {
+  static bool b = true;
+  if (b && globalIsWifiConnected)
+  {
+    server.begin();
+    webSockets.begin();
+    onLogLine(writeLogToSockets);
+    writeToLog("Web server listening");
+    b = !b;
+  }
+
+  static int totalWSConnectedClinets = 0;
+  webSockets.loop();
   server.handleClient();
+  int p = webSockets.connectedClients();
+  if (p == totalWSConnectedClinets)
+  {
+    return;
+  }
+  writeLogToSockets("");
+  totalWSConnectedClinets = p;
 }

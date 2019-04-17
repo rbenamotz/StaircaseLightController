@@ -5,7 +5,6 @@
 #include "common.h"
 #include "user_config.h"
 
-bool long_click_sensor_state = false;
 bool buttonDown = false;
 unsigned long buttonDownSince = 0;
 
@@ -29,7 +28,7 @@ void loopButton()
   if (state && !buttonDown)
   {
     writeToLog("Button down - toggling lights");
-    lightingToggle();
+    globalIsLightsOn = !globalIsLightsOn;
     buttonDown = true;
     buttonDownSince = millis();
     return;
@@ -37,12 +36,12 @@ void loopButton()
 
   //long click?
   l = millis() - buttonDownSince;
-  if (state && buttonDown && !long_click_sensor_state && l >= 600 && !longClickInitated)
+  if (state && buttonDown &&  l >= 600 && !longClickInitated)
   {
     writeToLog("Button long click");
 
     blinkLed();
-    long_click_sensor_state = true;
+    globalShouldPublishLongClick = true;
     longClickInitated = true;
     return;
   }
@@ -52,7 +51,6 @@ void loopButton()
   {
     writeToLog("Button up");
     buttonDown = false;
-    long_click_sensor_state = false;
     longClickInitated = false;
   }
 }

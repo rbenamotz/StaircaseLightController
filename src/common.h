@@ -5,6 +5,8 @@
 
 //Globals
 extern bool globalIsWifiConnected;
+extern bool globalIsLightsOn;
+extern bool globalShouldPublishLongClick;
 
 
 //OTA
@@ -14,5 +16,9 @@ extern bool globalIsWifiConnected;
 void setupCommon();
 void writeToLog(String line, ...);
 String readLogBuffer();
+
+typedef std::function<void(String)> LogLineHandlerFunction;
+
+void onLogLine(LogLineHandlerFunction f);
 
 #endif

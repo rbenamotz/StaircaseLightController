@@ -1,13 +1,18 @@
 #include "user_config.h"
 #include "lighting.h"
+#include "common.h"
 #include <Arduino.h>
-
-bool isLightsOn = true;
 
 void applyChanges()
 {
-  digitalWrite(LED_STRIP_PIN, isLightsOn);
-  digitalWrite(RELAY_PIN, isLightsOn);
+  static bool actualIsLightOn = !globalIsLightsOn;
+  if (actualIsLightOn == globalIsLightsOn)
+  {
+    return;
+  }
+  actualIsLightOn = globalIsLightsOn;
+  digitalWrite(LED_STRIP_PIN, actualIsLightOn);
+  digitalWrite(RELAY_PIN, actualIsLightOn);
 }
 
 void setupLighting()
@@ -19,30 +24,5 @@ void setupLighting()
 
 void loopLighting()
 {
-}
-
-void lightingOn()
-{
-  if (isLightsOn)
-  {
-    return;
-  }
-  isLightsOn = true;
-  applyChanges();
-}
-
-void lightingOff()
-{
-  if (!isLightsOn)
-  {
-    return;
-  }
-  isLightsOn = false;
-  applyChanges();
-}
-
-void lightingToggle()
-{
-  isLightsOn = !isLightsOn;
   applyChanges();
 }

@@ -24,10 +24,9 @@ void loop()
 {
   loopWifi();
   loopOta();
-  loopMqtt();
+  loopButton();
   loopLed();
   loopLighting();
-  loopButton();
+  loopMqtt();
   loopWebServer();
-  delay(1);
 }
