@@ -16,7 +16,7 @@ void executeLoopWork(const char* operation, void (*loopWorkItem)())
   loopWorkItem();
   l = millis() - l;
   if (l>2) {
-    writeToLog("Looping %s took %lu ms to complete",operation,l);
+    writeToLog("Looping %s took %lums to complete",operation,l);
   }
 }
 

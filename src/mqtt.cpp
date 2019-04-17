@@ -58,19 +58,27 @@ void reconnectToMqtt()
 {
   static unsigned long lastConectionAttempt = 0lu;
   unsigned long l = millis() - lastConectionAttempt;
-  if (client.state() == MQTT_CONNECTED || l < 500 || !globalIsWifiConnected)
+  if (!globalIsWifiConnected)
+  {
+    return;
+  }
+  if (l < 500)
+  {
+    return;
+  }
+  if (client.connected())
   {
     return;
   }
   bool output = client.connect(HOST_NAME, MQTT_USER, MQTT_PASS);
   if (output)
   {
-    writeToLog("Connected to MQTT %s as %s", HOST_NAME, MQTT_USER);
+    writeToLog("Connected to MQTT %s as %s", MQTT_HOST_NAME, MQTT_USER);
     client.subscribe(MQTT_TOPIC_IN);
   }
   else
   {
-    writeToLog("Failed to connected to MQTT %s as %s", HOST_NAME, MQTT_USER);
+    writeToLog("Failed to connected to MQTT %s as %s. State is: %d", HOST_NAME, MQTT_USER,client.state());
   }
   lastConectionAttempt = millis();
 }

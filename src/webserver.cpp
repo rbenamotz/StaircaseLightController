@@ -39,6 +39,7 @@ void handleLog()
 void handleRestart()
 {
   writeToLog("Restarting due to API request");
+  server.send(200, "plain/html", "restarting");
   ESP.restart();
 }
 
