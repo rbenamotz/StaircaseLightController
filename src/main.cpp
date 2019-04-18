@@ -7,6 +7,7 @@
 #include "mqtt.h"
 #include "common.h"
 #include "webserver.h"
+#include "sockerserver.h"
 
 void (*loopWorkItem)();
 
@@ -30,6 +31,7 @@ void setup()
   setupOta();
   setupMqtt();
   setupWebServer();
+  setupSocketServer();
 }
 
 void loop()
@@ -40,6 +42,7 @@ void loop()
   executeLoopWork("Led",loopLed);
   executeLoopWork("Lighting",loopLighting);
   executeLoopWork("MQTT",loopMqtt);
-  // executeLoopWork("WebServer",loopWebServer);
-  loopWebServer();
+  executeLoopWork("WebServer",loopWebServer);
+  // executeLoopWork("Sockets",loopSocketServer);
+  loopSocketServer();
 }

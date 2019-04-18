@@ -1,63 +1,44 @@
 #include "webserver.h"
-#include <ESP8266WebServer.h>
-#include <WebSocketsServer.h>
-#include <ESP8266HTTPUpdateServer.h>
+// #include <ESP8266HTTPUpdateServer.h>
 #include "common.h"
 #include "user_config.h"
 #include <ArduinoJson.h>
 #include <Hash.h>
+#include <ESPAsyncTCP.h>
+#include <ESPAsyncWebServer.h>
+#include <Hash.h>
 
-ESP8266WebServer server(80);
-ESP8266HTTPUpdateServer httpUpdater;
-WebSocketsServer webSockets = WebSocketsServer(81);
+AsyncWebServer server(80);
+// ESP8266HTTPUpdateServer httpUpdater;
 StaticJsonDocument<500> doc;
-volatile bool isLogDirty = false;
 
 const char rootPage[] PROGMEM = {ROOT_PAGE};
 
-void handleRoot()
+void notFound(AsyncWebServerRequest *request)
 {
-  server.send_P(200, "text/html", rootPage);
+  request->send(404, "text/plain", "Not found");
 }
 
-void buildJsonInt(char *output, String name, int value)
+void handleRoot(AsyncWebServerRequest *request)
 {
-  char temp[100];
-  sprintf(temp, ", \"%s\" : %d", name.c_str(), value);
-  strcat(output, temp);
+  request->send_P(200, "text/html", rootPage);
 }
 
-void handleData()
+void handleLog(AsyncWebServerRequest *request)
 {
-  server.send(200, "application/json", "{}");
-}
-
-void handleLog()
-{
-  server.send(200, "plain/text", readLogBuffer());
-}
-
-void handleRestart()
-{
-  writeToLog("Restarting due to API request");
-  server.send(200, "plain/html", "restarting");
-  ESP.restart();
-}
-
-void writeLogToSockets(String logLine)
-{
-  isLogDirty = true;
-  // webSockets.broadcastTXT(logLine + "\n");
-  // String s = readLogBuffer();
-  // webSockets.broadcastTXT(s);
+  request->send(200, "plain/text", readLogBuffer());
 }
 
 void setupWebServer()
 {
-  server.on("/", handleRoot);
-  server.on("/log", handleLog);
-  server.on("/rst", handleRestart);
-  httpUpdater.setup(&server);
+  server.on("/", HTTP_GET, handleRoot);
+  server.on("/log", HTTP_GET, handleLog);
+  server.on("/api/rst", HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->send(200, "text/plain", "Restarting");
+    ESP.restart();
+  });
+  server.onNotFound(notFound);
+  // httpUpdater.setup(&server);
 }
 
 void loopWebServer()
@@ -66,30 +47,7 @@ void loopWebServer()
   if (b && globalIsWifiConnected)
   {
     server.begin();
-    webSockets.begin();
-    onLogLine(writeLogToSockets);
     writeToLog("Web server listening");
     b = !b;
-  }
-
-  static int totalWSConnectedClinets = 0;
-  webSockets.loop();
-  unsigned long start = millis();
-  server.handleClient();
-  unsigned long l = millis() - start;
-  if (l>5) {
-    writeToLog("handleClient took %lums",l);
-  }
-  int p = webSockets.connectedClients();
-  if (p != totalWSConnectedClinets)
-  {
-    isLogDirty = true;
-    totalWSConnectedClinets = p;
-  }
-  if (isLogDirty)
-  {
-    String s = readLogBuffer();
-    webSockets.broadcastTXT(s);
-    isLogDirty = false;
   }
 }

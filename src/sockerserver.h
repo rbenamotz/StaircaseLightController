@@ -1,0 +1,2 @@
+void setupSocketServer();
+void loopSocketServer();
