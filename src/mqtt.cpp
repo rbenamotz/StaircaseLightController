@@ -81,9 +81,7 @@ void onMqttUnsubscribe(uint16_t packetId)
 
 void onMqttMessage(char *topic, char *payload, AsyncMqttClientMessageProperties properties, size_t len, size_t index, size_t total)
 {
-  // writeToLog("Message recieved");
   writeToLog("Recieved message for topic \"%s\", qos: %d, total: %d, len: %d, index: %d", topic, properties.qos, total, len, index);
-  // return;
   if (len == 0)
   {
     writeToLog("Toggling lights due to MQTT command");
@@ -172,6 +170,6 @@ void loopMqtt()
   //   lastTimeLightingStatePublished = millis();
   // }
   publishLightingState();
-  // publishSensorState();
+  publishSensorState();
   // client.loop();
 }

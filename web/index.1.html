@@ -1,43 +1,52 @@
 <html>
-  <head>
-    <script>
-      var socket;
-      function init() {
-        socket = new WebSocket("ws://" + window.location.hostname + ":81/");
-        socket.onmessage = function(event) {
-          var s = "";
-          var d = new Date().getTime();
-          event.data.split("\n").forEach(function(line) {
-            var p = line.indexOf(",");
-            if (p == -1) {
-              return;
-            }
-            var ms = parseInt(line.substr(0,p));
-            var txt = line.substr(p + 1);
-            var d1 = new Date(d - ms);
-            s += d1.toLocaleString() + " - " + txt + "\n";
-          });
-          preLogViewer.innerText = s;
-        };
-        socket.onclose = function(e) {
-          var d = new Date();
-          preLogViewer.innerText = d.toLocaleString() +  " - Socket is closed. Reconnect will be attempted in 1 second."  +  e.reason;
-          setTimeout(function() {
-            init();
-          }, 1000);
-        };
-        socket.onerror = function(err) {
-          preLogViewer.innerText = "Socket encountered error: " +  err.message;
-          socket.close();
-        };        
-      }
-    </script>
-    <style>
-    body
-    {
-      padding: 0;
-      margin: 0;
+
+<head>
+  <script>
+    var socket;
+    var logDiv;
+    function flipLight(chk) {
+      var s = chk.checked;
+      var msg = {};
+      msg["type"] = s ? "lights_on" : "lights_off";
+      var j = JSON.stringify(msg);
+      socket.send(j);
     }
+    function init() {
+      logDiv = document.getElementById("logViewerDiv");
+      var h = window.location.hostname;
+      if (h = "127.0.0.1")
+        h = "192.168.1.10";
+      socket = new WebSocket("ws://" + h + ":81/");
+      socket.onmessage = function (event) {
+        var s = "";
+        var d = new Date().getTime();
+        event.data.split("\n").forEach(function (line) {
+          var p = line.indexOf(",");
+          if (p == -1) {
+            return;
+          }
+          var ms = parseInt(line.substr(0, p));
+          var txt = line.substr(p + 1);
+          var d1 = new Date(d - ms);
+          s += d1.toLocaleString() + " - " + txt + "\n";
+        });
+        logDiv.innerText = s;
+      };
+      socket.onclose = function (e) {
+        var d = new Date();
+        logDiv.innerText = d.toLocaleString() + " - Socket is closed. Reconnect will be attempted in 1 second." + e
+          .reason;
+        setTimeout(function () {
+          init();
+        }, 1000);
+      };
+      socket.onerror = function (err) {
+        logDiv.logDiv = "Socket encountered error: " + err.message;
+        socket.close();
+      };
+    }
+  </script>
+  <style>
     h1 {
       font-size: 2em;
       color: #847bf7;
@@ -49,17 +58,36 @@
       padding-top: -60px;
 
     }
-    #preLogViewer {
+
+    .wrapper {
+      /* margin-top: 12px; */
+      /* display: flex; */
+      /* box-sizing: border-box; */
+      /* padding: 32px 16px; */
+    }
+
+    #operationaDiv {
+      border: 1px black dotted;
+      background-color: whitesmoke;
+      margin: 10px;
+      padding: 1em;
+      height: 100px;
+    }
+
+    #logViewerDiv {
       border: 1px black dotted;
       background-color: black;
-      width: 80%;
-      margin: auto;
+      margin: 10px;
       padding: 1em;
-      height: 60em;
-      overflow: auto;
-      font-weight: bold;
+      height: calc(100% - 300px);
+      box-sizing: border-box;
+      overflow-x: scroll;
+      word-wrap: break-word;
       color: yellow;
+      font-family: monospace;
+      /* font-size: small; */
     }
+
     .footer {
       position: fixed;
       left: 0;
@@ -70,15 +98,78 @@
       font-size: small;
       text-align: center;
     }
+
     a {
       text-decoration: none;
     }
-    </style>
-    <title>Stairway Controller</title>
-  </head>
-  <body onload="init()">
-    <h1 id="mainHeader">Stairway Controller</h1>
-    <pre id="preLogViewer"></pre>
-    <div class="footer">created by Roey Benamotz. <a href="mailto:roey@benamotz.com">roey@benamotz.com</a><div>
-  </body>
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 120px;
+      height: 68px;
+    }
+
+    /* Hide default HTML checkbox */
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    /* The slider */
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      -webkit-transition: .4s;
+      transition: .2s;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 52px;
+      width: 52px;
+      left: 4px;
+      bottom: 8px;
+      background-color: white;
+      -webkit-transition: .2s;
+      transition: .2s;
+    }
+
+    input:checked+.slider {
+      background-color: #2196F3;
+    }
+
+    input:focus+.slider {
+      box-shadow: 0 0 1px #2196F3;
+    }
+
+    input:checked+.slider:before {
+      -webkit-transform: translateX(52px);
+      -ms-transform: translateX(52px);
+      transform: translateX(52px);
+    }
+  </style>
+  <title>Stairway Controller</title>
+</head>
+
+<body onload="init()">
+  <h1 id="mainHeader">Stairway Controller</h1>
+  <div id="operationaDiv">
+    <label class="switch">
+      <input type="checkbox" onchange="flipLight(this);">
+      <span class="slider"></span>
+    </label>
+  </div>
+  <div id="logViewerDiv"></div>
+  <div class="footer">created by Roey Benamotz. <a href="mailto:roey@benamotz.com">roey@benamotz.com</a>
+    <div>
+</body>
+
 </html>
